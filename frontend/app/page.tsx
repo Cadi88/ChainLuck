@@ -1,26 +1,39 @@
-'use client';
-
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { Navbar } from './components/Navbar';
+import { SwapCard } from './components/SwapCard';
+import { LotteryCard } from './components/LotteryCard';
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Welcome to ChainLuck
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <ConnectButton />
+    <div className="min-h-screen bg-[#08060b] flex flex-col font-sans">
+      <Navbar />
+
+      {/* Hero Background Elements */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-[#7645d9]/10 blur-[120px]" />
+        <div className="absolute top-[20%] right-[-10%] w-[40%] h-[60%] rounded-full bg-[#1fc7d4]/10 blur-[120px]" />
+      </div>
+
+      <main className="flex-1 flex flex-col items-center p-4 sm:p-8 relative z-10 w-full max-w-6xl mx-auto mt-6 lg:mt-12">
+
+        <div className="text-center mb-10">
+          <h1 className="text-4xl sm:text-6xl font-black text-[#1fc7d4] drop-shadow-[0_0_15px_rgba(31,199,212,0.4)] mb-4">
+            ChainLuck
+          </h1>
+          <p className="text-lg sm:text-xl text-[#b8add2] font-semibold max-w-2xl mx-auto px-4">
+            Trade tokens, enter the decentralized lottery, and win big in the Arbitrum ecosystem.
+          </p>
         </div>
-      </div>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-to-br before:from-transparent before:to-blue-700 before:opacity-10 before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-to-t after:from-sky-900 after:via-[#0141ff] after:opacity-40 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <h1 className="text-6xl font-bold">ChainLuck Lottery</h1>
-      </div>
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 w-full justify-center items-center lg:items-start mt-4">
+          <div className="w-full flex justify-center lg:justify-end lg:w-1/2">
+            <SwapCard />
+          </div>
 
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        {/* Placeholders for future features */}
-      </div>
+          <div className="w-full flex justify-center lg:justify-start lg:w-1/2">
+            <LotteryCard />
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
