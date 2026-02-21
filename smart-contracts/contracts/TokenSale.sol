@@ -8,7 +8,7 @@ contract TokenSale is Ownable {
     IERC20 public token;
     uint256 public rate; // How many CLK tokens per 1 ETH
 
-    event TokensPurchased(address buyer, uint256 amountOfETH, uint256 amountOfTokens);
+    event TokensPurchased(address indexed buyer, uint256 amountOfETH, uint256 amountOfTokens);
 
     constructor(address _token, uint256 _rate, address initialOwner) Ownable(initialOwner) {
         require(_token != address(0), "Token address cannot be 0");
