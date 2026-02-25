@@ -7,7 +7,6 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { TOKENSALE_ABI, TOKENSALE_ADDRESS } from '../config/contracts';
 
 export function SwapCard() {
-    const { isConnected } = useAccount();
     const [ethAmount, setEthAmount] = useState('');
     const CLK_RATE = 1000; // Placeholder rate, e.g., 1 ETH = 1000 CLK
 
@@ -90,29 +89,52 @@ export function SwapCard() {
             </div>
 
             <div className="mt-4">
-                {!isConnected ? (
-                    <ConnectButton.Custom>
-                        {({ account, chain, openConnectModal, mounted }) => {
-                            const ready = mounted;
+                <ConnectButton.Custom>
+                    {({ account, chain, openChainModal, openConnectModal, mounted }) => {
+                        const ready = mounted;
+                        const connected = ready && account && chain;
+
+                        if (!ready) {
+                            return (
+                                <button disabled className="w-full bg-[#383241] text-[#b8add2] font-bold text-base py-4 rounded-2xl transition-all shadow-none cursor-not-allowed">
+                                    Cargando...
+                                </button>
+                            );
+                        }
+
+                        if (!connected) {
                             return (
                                 <button
                                     onClick={openConnectModal}
                                     className="w-full bg-[#1fc7d4] hover:bg-[#31d0dd] text-[#08060b] font-bold text-base py-4 rounded-2xl transition-all shadow-[0_4px_0_rgba(20,150,160,1)] active:translate-y-1 active:shadow-none"
                                 >
-                                    Connect Wallet to Swap
+                                    Conectar Billetera para Hacer Swap
                                 </button>
                             );
-                        }}
-                    </ConnectButton.Custom>
-                ) : (
-                    <button
-                        onClick={handleBuy}
-                        disabled={isPending || isConfirming || !ethAmount}
-                        className="w-full disabled:bg-[#383241] disabled:text-[#b8add2] disabled:shadow-none disabled:cursor-not-allowed bg-[#1fc7d4] hover:bg-[#31d0dd] text-[#08060b] font-bold text-base py-4 rounded-2xl transition-all shadow-[0_4px_0_rgba(20,150,160,1)] active:translate-y-1 active:shadow-none"
-                    >
-                        {isPending ? 'Confirm in Wallet...' : isConfirming ? 'Swapping...' : 'Swap ETH for CLK'}
-                    </button>
-                )}
+                        }
+
+                        if (chain.unsupported) {
+                            return (
+                                <button
+                                    onClick={openChainModal}
+                                    className="w-full bg-red-500 hover:bg-red-600 text-white font-bold text-base py-4 rounded-2xl transition-all shadow-[0_4px_0_rgba(185,28,28,1)] active:translate-y-1 active:shadow-none"
+                                >
+                                    Red Incorrecta (Cambiar)
+                                </button>
+                            );
+                        }
+
+                        return (
+                            <button
+                                onClick={handleBuy}
+                                disabled={isPending || isConfirming || !ethAmount}
+                                className="w-full disabled:bg-[#383241] disabled:text-[#b8add2] disabled:shadow-none disabled:cursor-not-allowed bg-[#1fc7d4] hover:bg-[#31d0dd] text-[#08060b] font-bold text-base py-4 rounded-2xl transition-all shadow-[0_4px_0_rgba(20,150,160,1)] active:translate-y-1 active:shadow-none"
+                            >
+                                {isPending ? 'Confirmar en Billetera...' : isConfirming ? 'Intercambiando...' : 'Swap ETH por CLK'}
+                            </button>
+                        );
+                    }}
+                </ConnectButton.Custom>
             </div>
 
             {isSuccess && (

@@ -25,7 +25,7 @@ const { wallets } = getDefaultWallets();
 
 const config = getDefaultConfig({
     appName: 'ChainLuck',
-    projectId: 'YOUR_PROJECT_ID', // TODO: Get a project ID from WalletConnect
+    projectId: process.env.NEXT_PUBLIC_PROJECT_ID || 'YOUR_PROJECT_ID',
     wallets: [
         ...wallets,
         {

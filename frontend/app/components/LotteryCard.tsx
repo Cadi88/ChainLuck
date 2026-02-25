@@ -7,7 +7,7 @@ import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { LOTTERY_ABI, LOTTERY_ADDRESS, CHAINLUCK_TOKEN_ABI, CHAINLUCK_TOKEN_ADDRESS } from '../config/contracts';
 
 export function LotteryCard() {
-    const { address: userAddress, isConnected } = useAccount();
+    const { address: userAddress } = useAccount();
     const [ticketsToBuy, setTicketsToBuy] = useState(1);
 
     // Read Lottery State
@@ -139,37 +139,60 @@ export function LotteryCard() {
                     )}
                 </div>
 
-                {!isConnected ? (
-                    <ConnectButton.Custom>
-                        {({ account, chain, openConnectModal, mounted }) => {
-                            const ready = mounted;
+                <ConnectButton.Custom>
+                    {({ account, chain, openChainModal, openConnectModal, mounted }) => {
+                        const ready = mounted;
+                        const connected = ready && account && chain;
+
+                        if (!ready) {
+                            return (
+                                <button disabled className="w-full bg-[#383241] text-[#b8add2] font-bold text-base py-4 rounded-2xl transition-all shadow-none cursor-not-allowed">
+                                    Cargando...
+                                </button>
+                            );
+                        }
+
+                        if (!connected) {
                             return (
                                 <button
                                     onClick={openConnectModal}
                                     className="w-full bg-[#1fc7d4] hover:bg-[#31d0dd] text-[#08060b] font-bold text-base py-4 rounded-2xl transition-all shadow-[0_4px_0_rgba(20,150,160,1)] active:translate-y-1 active:shadow-none"
                                 >
-                                    Connect Wallet to Play
+                                    Conectar Billetera para Jugar
                                 </button>
                             );
-                        }}
-                    </ConnectButton.Custom>
-                ) : (
-                    <button
-                        onClick={handleAction}
-                        disabled={!isOpen || isWritePending || isConfirming}
-                        className="w-full disabled:bg-[#383241] disabled:text-[#b8add2] disabled:shadow-none disabled:cursor-not-allowed bg-[#7645d9] hover:bg-[#8e60e8] text-[#f4eeff] font-bold text-base py-4 rounded-2xl transition-all shadow-[0_4px_0_#5820bd] active:translate-y-1 active:shadow-none"
-                    >
-                        {!isOpen
-                            ? 'Closed'
-                            : isWritePending
-                                ? 'Confirm in Wallet...'
-                                : isConfirming
-                                    ? 'Processing...'
-                                    : needsApproval
-                                        ? `Approve ${ticketsToBuy * Number(formattedPrice)} CLK`
-                                        : `Buy ${ticketsToBuy} Ticket(s)`}
-                    </button>
-                )}
+                        }
+
+                        if (chain.unsupported) {
+                            return (
+                                <button
+                                    onClick={openChainModal}
+                                    className="w-full bg-red-500 hover:bg-red-600 text-white font-bold text-base py-4 rounded-2xl transition-all shadow-[0_4px_0_rgba(185,28,28,1)] active:translate-y-1 active:shadow-none"
+                                >
+                                    Red Incorrecta (Cambiar)
+                                </button>
+                            );
+                        }
+
+                        return (
+                            <button
+                                onClick={handleAction}
+                                disabled={!isOpen || isWritePending || isConfirming}
+                                className="w-full disabled:bg-[#383241] disabled:text-[#b8add2] disabled:shadow-none disabled:cursor-not-allowed bg-[#7645d9] hover:bg-[#8e60e8] text-[#f4eeff] font-bold text-base py-4 rounded-2xl transition-all shadow-[0_4px_0_#5820bd] active:translate-y-1 active:shadow-none"
+                            >
+                                {!isOpen
+                                    ? 'Cerrada'
+                                    : isWritePending
+                                        ? 'Confirmar en Billetera...'
+                                        : isConfirming
+                                            ? 'Procesando...'
+                                            : needsApproval
+                                                ? `Aprobar ${ticketsToBuy * Number(formattedPrice)} CLK`
+                                                : `Comprar ${ticketsToBuy} Ticket(s)`}
+                            </button>
+                        );
+                    }}
+                </ConnectButton.Custom>
 
                 {isSuccess && (
                     <div className="mt-4 p-3 bg-[#1fc7d4]/10 border border-[#1fc7d4]/30 rounded-xl text-[#1fc7d4] text-sm font-semibold text-center">
