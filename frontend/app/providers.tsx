@@ -19,7 +19,7 @@ import {
     hardhat,
 } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { WagmiProvider } from 'wagmi';
+import { WagmiProvider, http, fallback } from 'wagmi';
 
 const { wallets } = getDefaultWallets();
 
@@ -38,6 +38,17 @@ const config = getDefaultConfig({
         arbitrumSepolia,
         ...(process.env.NEXT_PUBLIC_ENABLE_TESTNETS === 'true' ? [hardhat] : []),
     ],
+    transports: {
+        [arbitrum.id]: fallback([
+            http(`https://arb-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY || ''}`),
+            http() // Default public fallback
+        ]),
+        [arbitrumSepolia.id]: fallback([
+            http(`https://arb-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_KEY || ''}`),
+            http() // Default public fallback
+        ]),
+        [hardhat.id]: http('http://127.0.0.1:8545'),
+    },
     ssr: true,
 });
 

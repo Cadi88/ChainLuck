@@ -1,12 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useBalance } from 'wagmi';
 import { parseEther } from 'viem';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import toast from 'react-hot-toast';
+import { useEffect } from 'react';
 import { TOKENSALE_ABI, TOKENSALE_ADDRESS } from '../config/contracts';
 
 export function SwapCard() {
+    const { address: userAddress } = useAccount();
+    const { data: balanceData } = useBalance({ address: userAddress });
+    const ethBalance = balanceData ? Number(balanceData.formatted) : 0;
+
     const [ethAmount, setEthAmount] = useState('');
     const CLK_RATE = 1000; // Placeholder rate, e.g., 1 ETH = 1000 CLK
 
@@ -17,6 +23,23 @@ export function SwapCard() {
     const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
         hash,
     });
+
+    useEffect(() => {
+        if (isSuccess) {
+            toast.success('¡Intercambio exitoso!');
+            setEthAmount('');
+        }
+        if (error) {
+            const msg = error.message.includes('User rejected') || error.message.includes('User denied')
+                ? 'Transacción rechazada por el usuario.'
+                : error.message.includes('insufficient funds')
+                    ? 'Saldo insuficiente para cubrir el costo y el gas.'
+                    : 'Error en la transacción.';
+            toast.error(msg);
+        }
+    }, [isSuccess, error]);
+
+    const isOverBalance = Number(ethAmount) > ethBalance;
 
     const handleBuy = () => {
         if (!ethAmount || isNaN(Number(ethAmount))) return;
@@ -42,6 +65,7 @@ export function SwapCard() {
                 <div className="bg-[#08060b] rounded-2xl p-4 border border-[#383241] hover:border-[#7645d9]/50 transition-colors">
                     <div className="flex justify-between items-center mb-2">
                         <span className="text-sm text-[#b8add2] font-semibold">Pay</span>
+                        <span className="text-sm text-[#b8add2] font-semibold">Balance: {ethBalance.toFixed(4)} ETH</span>
                     </div>
                     <div className="flex justify-between items-center">
                         <input
@@ -51,10 +75,17 @@ export function SwapCard() {
                             onChange={(e) => setEthAmount(e.target.value)}
                             className="bg-transparent text-2xl outline-none w-full text-[#f4eeff] font-semibold"
                         />
-                        <button className="flex items-center justify-center gap-1 bg-[#27262c] hover:bg-[#383241] px-3 py-1.5 rounded-xl font-bold transition-colors text-[#f4eeff]">
-                            <div className="w-5 h-5 rounded-full bg-blue-500 mr-1 flex items-center justify-center text-[10px] text-white">E</div>
-                            ETH <span className="text-[#b8add2] ml-1">▾</span>
-                        </button>
+                        <div className="flex items-center">
+                            <button
+                                onClick={() => setEthAmount(Math.max(0, ethBalance - 0.005).toString())}
+                                className="text-xs bg-[#1fc7d4]/20 text-[#1fc7d4] hover:bg-[#1fc7d4]/30 px-2 py-1.5 rounded-lg mr-2 font-bold transition-colors">
+                                MAX
+                            </button>
+                            <button className="flex items-center justify-center gap-1 bg-[#27262c] hover:bg-[#383241] px-3 py-1.5 rounded-xl font-bold transition-colors text-[#f4eeff]">
+                                <div className="w-5 h-5 rounded-full bg-blue-500 mr-1 flex items-center justify-center text-[10px] text-white">E</div>
+                                ETH <span className="text-[#b8add2] ml-1">▾</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -127,26 +158,15 @@ export function SwapCard() {
                         return (
                             <button
                                 onClick={handleBuy}
-                                disabled={isPending || isConfirming || !ethAmount}
+                                disabled={isPending || isConfirming || !ethAmount || isOverBalance}
                                 className="w-full disabled:bg-[#383241] disabled:text-[#b8add2] disabled:shadow-none disabled:cursor-not-allowed bg-[#1fc7d4] hover:bg-[#31d0dd] text-[#08060b] font-bold text-base py-4 rounded-2xl transition-all shadow-[0_4px_0_rgba(20,150,160,1)] active:translate-y-1 active:shadow-none"
                             >
-                                {isPending ? 'Confirmar en Billetera...' : isConfirming ? 'Intercambiando...' : 'Swap ETH por CLK'}
+                                {isOverBalance ? 'Saldo Insuficiente' : isPending ? 'Confirmar en Billetera...' : isConfirming ? 'Intercambiando...' : 'Swap ETH por CLK'}
                             </button>
                         );
                     }}
                 </ConnectButton.Custom>
             </div>
-
-            {isSuccess && (
-                <div className="mt-4 p-3 bg-[#1fc7d4]/10 border border-[#1fc7d4]/30 rounded-xl text-[#1fc7d4] text-sm font-semibold text-center">
-                    Swap successful!
-                </div>
-            )}
-            {error && (
-                <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm font-semibold text-center truncate">
-                    Error: {(error as any).shortMessage || error.message}
-                </div>
-            )}
         </div>
     );
 }

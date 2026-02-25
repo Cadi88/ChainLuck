@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { formatEther } from 'viem';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
+import toast from 'react-hot-toast';
+import { useEffect } from 'react';
 import { LOTTERY_ABI, LOTTERY_ADDRESS, CHAINLUCK_TOKEN_ABI, CHAINLUCK_TOKEN_ADDRESS } from '../config/contracts';
 
 export function LotteryCard() {
@@ -55,12 +57,26 @@ export function LotteryCard() {
     // Players estimation
     const playersCount = (ticketPrice > 0n && currentPot > 0n) ? Number(currentPot / ticketPrice) : 0;
 
-    // Writes
-    const { data: writeHash, isPending: isWritePending, writeContract } = useWriteContract();
+    const { data: writeHash, error, isPending: isWritePending, writeContract } = useWriteContract();
 
     const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
         hash: writeHash,
     });
+
+    useEffect(() => {
+        if (isSuccess) {
+            toast.success('¡Transacción enviada con éxito!');
+            setTicketsToBuy(1);
+        }
+        if (error) {
+            const msg = error.message.includes('User rejected') || error.message.includes('User denied')
+                ? 'Transacción rechazada por el usuario.'
+                : error.message.includes('insufficient funds')
+                    ? 'Saldo insuficiente para cubrir el costo y el gas.'
+                    : 'Error en la transacción.';
+            toast.error(msg);
+        }
+    }, [isSuccess, error]);
 
     const handleAction = () => {
         if (!isOpen) return;
@@ -193,12 +209,6 @@ export function LotteryCard() {
                         );
                     }}
                 </ConnectButton.Custom>
-
-                {isSuccess && (
-                    <div className="mt-4 p-3 bg-[#1fc7d4]/10 border border-[#1fc7d4]/30 rounded-xl text-[#1fc7d4] text-sm font-semibold text-center">
-                        Transaction sent successfully!
-                    </div>
-                )}
             </div>
         </div>
     );
