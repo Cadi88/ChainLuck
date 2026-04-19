@@ -16,12 +16,14 @@ async function main() {
     // Tasa: 1 ETH = 1000 CLK (Ajustable)
     const rate = 1000;
 
+    const targetWallet = "0x7E6599B9342db422CA6b3DF895593682d87824bE";
+
     console.log("Desplegando TokenSale...");
     const TokenSale = await hre.ethers.getContractFactory("TokenSale");
     const sale = await TokenSale.deploy(
         tokenAddress,
         rate,
-        deployer.address // Initial owner
+        targetWallet // Initial owner
     );
 
     await sale.waitForDeployment();

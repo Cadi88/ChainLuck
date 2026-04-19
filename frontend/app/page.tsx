@@ -24,12 +24,14 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 w-full justify-center items-center lg:items-start mt-4">
+        <div className="flex flex-col gap-8 w-full justify-center items-center mt-4">
+          {/* 
           <div className="w-full flex justify-center lg:justify-end lg:w-1/2">
             <SwapCard />
           </div>
+          */}
 
-          <div className="w-full flex justify-center lg:justify-start lg:w-1/2">
+          <div className="w-full flex justify-center">
             <LotteryCard />
           </div>
         </div>

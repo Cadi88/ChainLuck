@@ -31,20 +31,56 @@ async function main() {
     const lotteryAddress = await lottery.getAddress();
     console.log(`Lottery desplegada en: ${lotteryAddress}`);
 
-    // 4. Configurar la Lotería en el Token
+    const targetWallet = "0x7E6599B9342db422CA6b3DF895593682d87824bE";
+
+    // 4. Desplegar TokenSale
+    console.log("Desplegando TokenSale...");
+    const rate = 1000; // 1 ETH = 1000 CLK
+    const TokenSale = await hre.ethers.getContractFactory("TokenSale");
+    const tokenSale = await TokenSale.deploy(
+        tokenAddress,
+        rate,
+        deployer.address // Dueño temporal para configuración
+    );
+    await tokenSale.waitForDeployment();
+    const saleAddress = await tokenSale.getAddress();
+    console.log(`TokenSale desplegada en: ${saleAddress}`);
+
+    // 5. Configurar la Lotería en el Token
     console.log("Configurando el contrato de Lotería en el contrato del Token...");
     const tx1 = await chainLuckToken.setLotteryContract(lotteryAddress);
     await tx1.wait();
 
-    // 5. ASEGURAR PROPIEDAD (Opcional pero recomendado)
-    // Forzamos que el deployer sea el dueño absoluto para evitar el error de los 38M USD
-    console.log("Verificando propiedad del contrato...");
-    const owner = await lottery.owner();
-    console.log(`El dueño actual de la Lotería es: ${owner}`);
+    // 6. Transferir el 80% de tokens al contrato de Venta (TokenSale)
+    console.log(`Transfiriendo el 80% (2,400,000 tokens) al contrato TokenSale...`);
+    const saleAmount = hre.ethers.parseUnits("2400000", 18);
+    const txSale = await chainLuckToken.transferToSaleContract(saleAddress, saleAmount);
+    await txSale.wait();
 
-    console.log("--- DESPLIEGUE FINALIZADO CON ÉXITO ---");
+    // 7. Transferir el 20% (600,000 tokens) al Wallet Principal
+    console.log(`Transfiriendo el 20% (600,000 tokens) a ${targetWallet}...`);
+    const ownerAmount = hre.ethers.parseUnits("600000", 18);
+    const tx2 = await chainLuckToken.transfer(targetWallet, ownerAmount);
+    await tx2.wait();
+
+    // 8. Transferir Propiedad de todos los contratos al Wallet Principal
+    console.log(`Transfiriendo propiedad de los contratos a ${targetWallet}...`);
+    
+    const txT = await chainLuckToken.transferOwnership(targetWallet);
+    await txT.wait();
+
+    const txL = await lottery.transferOwnership(targetWallet);
+    await txL.wait();
+
+    const txS = await tokenSale.transferOwnership(targetWallet);
+    await txS.wait();
+
+    console.log("--- DESPLIEGUE COMPLETO FINALIZADO CON ÉXITO ---");
     console.log(`Dirección Token: ${tokenAddress}`);
     console.log(`Dirección Lotería: ${lotteryAddress}`);
+    console.log(`Dirección TokenSale: ${saleAddress}`);
+    console.log(`Dueño Final: ${targetWallet}`);
+    console.log(`Distribución: 20% al Dueño, 80% al contrato de Venta.`);
 }
 
 main().then(() => process.exit(0)).catch((error) => {

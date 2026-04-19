@@ -12,10 +12,25 @@ contract ChainLuckToken is ERC20, Ownable, ERC20Permit {
     constructor(
         address initialOwner
     ) ERC20("ChainLuck", "CLK") Ownable(initialOwner) ERC20Permit("ChainLuck") {
-        _mint(msg.sender, 3000000 * 10 ** decimals());
+        uint256 totalTokens = 3000000 * 10 ** decimals();
+        uint256 ownerAmount = (totalTokens * 20) / 100;
+        uint256 contractAmount = totalTokens - ownerAmount;
+
+        // 20% directamente al wallet del dueño
+        _mint(initialOwner, ownerAmount);
+        // 80% dentro del contrato
+        _mint(address(this), contractAmount);
     }
 
     function setLotteryContract(address _lottery) external onlyOwner {
         lotteryContract = _lottery;
+    }
+
+    // Permite al dueño enviar los tokens retenidos (80%) al contrato TokenSale
+    // cuando este sea desplegado, para que los usuarios puedan comprarlos.
+    function transferToSaleContract(address saleContract, uint256 amount) external onlyOwner {
+        require(saleContract != address(0), "Direccion invalida");
+        require(balanceOf(address(this)) >= amount, "Saldo insuficiente en el contrato");
+        _transfer(address(this), saleContract, amount);
     }
 }
