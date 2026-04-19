@@ -48,14 +48,27 @@ export function LotteryCard() {
     });
     const allowance = allowanceData ? BigInt(allowanceData as any) : 0n;
 
+    // Read Token Balance
+    const { data: balanceData } = useReadContract({
+        address: CHAINLUCK_TOKEN_ADDRESS as `0x${string}`,
+        abi: CHAINLUCK_TOKEN_ABI,
+        functionName: 'balanceOf',
+        args: [userAddress as `0x${string}`],
+        query: { enabled: !!userAddress, refetchInterval: 3000 }
+    });
+    const userBalance = balanceData ? BigInt(balanceData as any) : 0n;
+
     // Calculations
     const formattedPot = formatEther(currentPot);
     const formattedPrice = formatEther(ticketPrice);
     const totalCost = ticketPrice * BigInt(ticketsToBuy);
     const needsApproval = allowance < totalCost;
+    const hasEnoughBalance = userBalance >= totalCost;
 
     // Players estimation
     const playersCount = (ticketPrice > 0n && currentPot > 0n) ? Number(currentPot / ticketPrice) : 0;
+
+    const [actionType, setActionType] = useState<'approve' | 'buy'>('approve');
 
     const { data: writeHash, error, isPending: isWritePending, writeContract } = useWriteContract();
 
@@ -65,8 +78,12 @@ export function LotteryCard() {
 
     useEffect(() => {
         if (isSuccess) {
-            toast.success('¡Transacción enviada con éxito!');
-            setTicketsToBuy(1);
+            if (actionType === 'approve') {
+                toast.success('¡Aprobación exitosa! Ahora haz clic en Comprar.');
+            } else {
+                toast.success('¡Ticket(s) comprados con éxito!');
+                setTicketsToBuy(1);
+            }
         }
         if (error) {
             const msg = error.message.includes('User rejected') || error.message.includes('User denied')
@@ -76,12 +93,13 @@ export function LotteryCard() {
                     : 'Error en la transacción.';
             toast.error(msg);
         }
-    }, [isSuccess, error]);
+    }, [isSuccess, error, actionType]);
 
     const handleAction = () => {
         if (!isOpen) return;
 
         if (needsApproval) {
+            setActionType('approve');
             writeContract({
                 address: CHAINLUCK_TOKEN_ADDRESS as `0x${string}`,
                 abi: CHAINLUCK_TOKEN_ABI,
@@ -89,6 +107,7 @@ export function LotteryCard() {
                 args: [LOTTERY_ADDRESS as `0x${string}`, totalCost],
             });
         } else {
+            setActionType('buy');
             writeContract({
                 address: LOTTERY_ADDRESS as `0x${string}`,
                 abi: LOTTERY_ABI,
@@ -193,18 +212,20 @@ export function LotteryCard() {
                         return (
                             <button
                                 onClick={handleAction}
-                                disabled={!isOpen || isWritePending || isConfirming}
+                                disabled={!isOpen || isWritePending || isConfirming || (!hasEnoughBalance && !needsApproval)}
                                 className="w-full disabled:bg-[#383241] disabled:text-[#b8add2] disabled:shadow-none disabled:cursor-not-allowed bg-[#7645d9] hover:bg-[#8e60e8] text-[#f4eeff] font-bold text-base py-4 rounded-2xl transition-all shadow-[0_4px_0_#5820bd] active:translate-y-1 active:shadow-none"
                             >
                                 {!isOpen
                                     ? 'Cerrada'
-                                    : isWritePending
-                                        ? 'Confirmar en Billetera...'
-                                        : isConfirming
-                                            ? 'Procesando...'
-                                            : needsApproval
-                                                ? `Aprobar ${ticketsToBuy * Number(formattedPrice)} CLK`
-                                                : `Comprar ${ticketsToBuy} Ticket(s)`}
+                                    : !hasEnoughBalance && !needsApproval
+                                        ? 'No tienes suficientes CLK'
+                                        : isWritePending
+                                            ? 'Confirmar en Billetera...'
+                                            : isConfirming
+                                                ? 'Procesando...'
+                                                : needsApproval
+                                                    ? `Aprobar ${ticketsToBuy * Number(formattedPrice)} CLK`
+                                                    : `Comprar ${ticketsToBuy} Ticket(s)`}
                             </button>
                         );
                     }}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount, useBalance } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, useBalance, useReadContract } from 'wagmi';
 import { parseEther } from 'viem';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import toast from 'react-hot-toast';
@@ -13,9 +13,14 @@ export function SwapCard() {
     const { data: balanceData } = useBalance({ address: userAddress });
     const ethBalance = balanceData ? Number(balanceData.formatted) : 0;
 
-    const [ethAmount, setEthAmount] = useState('');
-    const CLK_RATE = 1000; // Placeholder rate, e.g., 1 ETH = 1000 CLK
+    const { data: rateData } = useReadContract({
+        address: TOKENSALE_ADDRESS as `0x${string}`,
+        abi: TOKENSALE_ABI,
+        functionName: 'rate',
+    });
+    const CLK_RATE = rateData ? Number(rateData as any) : 1000;
 
+    const [ethAmount, setEthAmount] = useState('');
     const expectedClk = ethAmount ? Number(ethAmount) * CLK_RATE : 0;
 
     const { data: hash, error, isPending, writeContract } = useWriteContract();
