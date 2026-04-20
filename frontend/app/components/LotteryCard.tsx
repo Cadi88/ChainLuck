@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -30,7 +31,7 @@ export function LotteryCard() {
     const ticketPrice = ticketPriceData ? BigInt(ticketPriceData as any) : 0n;
 
     // Read Current Pot
-    const { data: currentPotData } = useReadContract({
+    const { data: currentPotData, refetch: refetchPot } = useReadContract({
         address: LOTTERY_ADDRESS as `0x${string}`,
         abi: LOTTERY_ABI,
         functionName: 'currentPot',
@@ -39,7 +40,7 @@ export function LotteryCard() {
     const currentPot = currentPotData ? BigInt(currentPotData as any) : 0n;
 
     // Read Token Allowance
-    const { data: allowanceData } = useReadContract({
+    const { data: allowanceData, refetch: refetchAllowance } = useReadContract({
         address: CHAINLUCK_TOKEN_ADDRESS as `0x${string}`,
         abi: CHAINLUCK_TOKEN_ABI,
         functionName: 'allowance',
@@ -49,7 +50,7 @@ export function LotteryCard() {
     const allowance = allowanceData ? BigInt(allowanceData as any) : 0n;
 
     // Read Token Balance
-    const { data: balanceData } = useReadContract({
+    const { data: balanceData, refetch: refetchBalance } = useReadContract({
         address: CHAINLUCK_TOKEN_ADDRESS as `0x${string}`,
         abi: CHAINLUCK_TOKEN_ABI,
         functionName: 'balanceOf',
@@ -80,9 +81,14 @@ export function LotteryCard() {
         if (isSuccess) {
             if (actionType === 'approve') {
                 toast.success('¡Aprobación exitosa! Ahora haz clic en Comprar.');
+                // Refetch allowance immediately so the button switches to "Buy"
+                refetchAllowance();
             } else {
                 toast.success('¡Ticket(s) comprados con éxito!');
                 setTicketsToBuy(1);
+                // Refetch pot and balance immediately to reflect the purchase
+                refetchPot();
+                refetchBalance();
             }
         }
         if (error) {
